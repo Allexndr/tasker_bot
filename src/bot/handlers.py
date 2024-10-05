@@ -1,9 +1,23 @@
 from telebot import types
 from src.config.settings import bot
-# from src.config.db import get_db
-# from src.config.models import User
-# from sqlalchemy.orm import Session
-@bot.callback_query_handler(func=lambda call: call.data == "register")
+from src.database.db import get_db
+from src.database.models import User
+from sqlalchemy.orm import Session
+
+
+# Обрабатываем нажатие на Inline-кнопки
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback(call):
+    if call.data == "register":
+        register_user(call)
+    elif call.data == "login":
+        bot.send_message(call.message.chat.id, "Вы выбрали Залогиниться")
+
+    # Удаляем сообщение с кнопками после обработки
+    bot.delete_message(call.message.chat.id, call.message.message_id)
+
+
+# Обработчик для регистрации пользователя
 def register_user(call):
     db: Session = next(get_db())  # Получаем сессию базы данных
 
@@ -24,6 +38,3 @@ def register_user(call):
         db.refresh(new_user)
 
         bot.send_message(call.message.chat.id, "Регистрация успешна!")
-
-    # Удаляем сообщение с кнопками после регистрации
-    bot.delete_message(call.message.chat.id, call.message.message_id)

@@ -2,13 +2,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Подключение к базе данных (например, SQLite)
-DATABASE_URL = "sqlite:///./task_manager.db"
+DATABASE_URL = "postgresql://postgres:cfif2004@localhost:5432/postgres"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Базовый класс для создания моделей
 Base = declarative_base()
 
 # Функция для получения сессии базы данных
