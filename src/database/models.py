@@ -11,3 +11,11 @@ class User(Base):
     telegram_id = Column(BigInteger, unique=True, index=True)
 
 
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    description = Column(String, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+
+    user = relationship("User", back_populates="tasks")
