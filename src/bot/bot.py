@@ -12,6 +12,5 @@ def welcome(message):
 
     bot.send_message(message.chat.id, welcome_message, parse_mode='html', reply_markup=markup)
 
-# Запуск бота
 if __name__ == '__main__':
     bot.infinity_polling()
