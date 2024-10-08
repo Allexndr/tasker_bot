@@ -4,7 +4,6 @@ from src.database.db import get_db
 from src.database.models import User, Task
 from sqlalchemy.orm import Session
 
-
 # Обработка нажатия на Inline-кнопку
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
@@ -12,10 +11,12 @@ def handle_callback(call):
         register_user(call)
     elif call.data == "login":
         login_user(call)
-
-    # Удаляем сообщение с кнопками после обработки
-    bot.delete_message(call.message.chat.id, call.message.message_id)
-
+    elif call.data == "my_tasks":
+        show_tasks(call)
+    elif call.data == "add_task":
+        prompt_add_task(call)
+    elif call.data.startswith("delete_task_"):
+        delete_task(call)
 
 # Обработчик для регистрации пользователя
 def register_user(call):
@@ -34,7 +35,6 @@ def register_user(call):
             db.commit()
             bot.send_message(call.message.chat.id, "Регистрация успешна!")
 
-
 # Обработчик для логина пользователя
 def login_user(call):
     with next(get_db()) as db:
@@ -50,4 +50,62 @@ def login_user(call):
         else:
             bot.send_message(call.message.chat.id, "Пожалуйста, зарегистрируйтесь сначала.")
 
-    bot.delete_message(call.message.chat.id, call.message.message_id)
+# Обработчик для просмотра задач
+def show_tasks(call):
+    with next(get_db()) as db:
+        # Retrieve the user by telegram_id
+        user_in_db = db.query(User).filter(User.telegram_id == call.from_user.id).first()
+
+        if not user_in_db:
+            bot.send_message(call.message.chat.id, "Пожалуйста, зарегистрируйтесь сначала.")
+            return
+
+        # Now, query tasks using the user's id
+        tasks = db.query(Task).filter(Task.user_id == user_in_db.id).all()
+
+        print(f"Tasks for user {user_in_db.id}: {tasks}")  # Debug info to see tasks
+
+        if tasks:
+            for task in tasks:
+                markup = types.InlineKeyboardMarkup()
+                delete_button = types.InlineKeyboardButton(f"Удалить задачу {task.id}",
+                                                           callback_data=f"delete_task_{task.id}")
+                markup.add(delete_button)
+                bot.send_message(call.message.chat.id, f"Задача: {task.description}", reply_markup=markup)
+        else:
+            bot.send_message(call.message.chat.id, "У вас нет задач.")
+
+
+# Обработчик для добавления задачи
+def prompt_add_task(call):
+    msg = bot.send_message(call.message.chat.id, "Введите описание задачи:")
+    bot.register_next_step_handler(msg, add_task)
+
+def add_task(message):
+    with next(get_db()) as db:
+        user_in_db = db.query(User).filter(User.telegram_id == message.from_user.id).first()
+
+        if user_in_db:
+            new_task = Task(
+                description=message.text,
+                user_id=user_in_db.id
+            )
+            db.add(new_task)
+            db.commit()
+            print(f"Task added: {new_task.description}, User: {new_task.user_id}")
+            bot.send_message(message.chat.id, "Задача успешно добавлена!")
+        else:
+            bot.send_message(message.chat.id, "Сначала залогиньтесь!")
+
+# Обработчик для удаления задачи
+def delete_task(call):
+    task_id = int(call.data.split("_")[-1])
+    with next(get_db()) as db:
+        task = db.query(Task).filter(Task.id == task_id).first()
+
+        if task:
+            db.delete(task)
+            db.commit()
+            bot.send_message(call.message.chat.id, f"Задача {task_id} успешно удалена!")
+        else:
+            bot.send_message(call.message.chat.id, "Задача не найдена.")

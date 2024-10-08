@@ -1,5 +1,6 @@
 from telebot import types
 from src.config.settings import bot
+from handlers import *  # Ensure correct import based on folder structure
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
