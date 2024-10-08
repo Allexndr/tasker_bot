@@ -109,3 +109,14 @@ def delete_task(call):
             bot.send_message(call.message.chat.id, f"Задача {task_id} успешно удалена!")
         else:
             bot.send_message(call.message.chat.id, "Задача не найдена.")
+# def delete_task(call):
+#     task_id = int(call.data.split("_")[-1])
+#     with next(get_db()) as db:
+#         task = db.query(Task).filter(Task.id == task_id).first()
+#
+#         if task:
+#             db.delete(task)
+#             db.commit()
+#             bot.send_message(call.message.chat.id, f"Задача {task_id} успешно удалена!")
+#         else:
+#             bot.send_message(call.message.chat.id, "Задача не найдена.")
